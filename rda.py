@@ -1,4 +1,4 @@
-import streamlit as st
+timport streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 from PIL import Image
@@ -12,10 +12,10 @@ st.title("Player Pizza Chart Generator")
 
 # File uploader
 uploaded_file = st.file_uploader("Upload Excel File", type=["xlsx"])
-playerrequest = st.text_input("Player Name", value='C. Hudson-Odoi')
+playerrequest = st.text_input("Player Name", value='Enter Player Name')
 position = st.selectbox("Position", options=['LW', 'RW', 'CM', 'LB', 'RB', 'DM', 'AM', 'CB', 'CF', 'LWB', 'RWB'])
-league = st.text_input("League", value='Premier League')
-season = st.text_input("Season", value='2024/25')
+league = st.text_input("League", value='Enter League Name')
+season = st.text_input("Season", value='Enter Season Name')
 minutethreshold = st.number_input("Minimum Minutes Played", value=900)
 
 if uploaded_file:
