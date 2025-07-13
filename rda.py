@@ -83,8 +83,15 @@ if uploaded_file:
     
     
     leagueimage2 = league_image_map.get(league, "URL not found")
-    leagueimage = Image.open(urlopen(f'{leagueimage2}'))    
-    ## COLUMN MOVE
+    if league:
+        leagueimage2 = league_logos.get(league)
+        if leagueimage2:
+            leagueimage = Image.open(urlopen(leagueimage2))
+        else:
+            st.warning("No logo available for selected league.")
+            leagueimage = None
+    else:
+        leagueimage = None    ## COLUMN MOVE
     cols_to_move = ['Birth country', 'Passport country', 'Foot', 'Height', 'Weight', 'On loan']
     all_cols = list(data.columns)
     before = all_cols[:7]
