@@ -92,7 +92,7 @@ if uploaded_file:
     unique_players = sorted(position_data['Player'].dropna().unique())
     playerrequest = st.selectbox("Select Player", options=unique_players)
 
-        st.stop()
+    st.stop()
 
     
     ### PERCENTILES
