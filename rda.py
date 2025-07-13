@@ -423,7 +423,7 @@ if uploaded_file:
     )   # these values might differ when you are plotting
     
     
-    plt.show()
+    st.pyplot(fig)
 
 else:
     st.warning("Please upload an Excel file.")
