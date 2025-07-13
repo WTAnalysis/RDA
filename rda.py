@@ -78,6 +78,18 @@ if uploaded_file:
         (data['position4'] == position)
     ]
     position_data = position_data.loc[position_data['Minutes played']>= minutethreshold]
+    # DEBUG: Show filtered dataset
+    st.subheader("Filtered Data Preview")
+    st.dataframe(position_data)
+
+    if position_data.empty:
+        st.warning("No players found for that position or below the minute threshold.")
+        st.stop()
+
+    if playerrequest not in position_data['Player'].values:
+        st.warning(f"Player '{playerrequest}' not found in the filtered dataset.")
+        st.stop()
+
     
     ### PERCENTILES
     cols_to_percentile = position_data.columns[18:]
@@ -397,7 +409,6 @@ if uploaded_file:
             transform=fig.transFigure, figure=fig
         ),
     ])
-    528
     # add image
     #ax_image = add_image(
     #    fdj_cropped, fig, left=0.4618, bottom=0.4475, width=0.095, height=0.1075
