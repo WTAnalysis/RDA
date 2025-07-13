@@ -16,7 +16,7 @@ playerrequest = st.text_input("Player Name", value='Enter Player Name')
 position = st.selectbox("Position", value='Select Position', options=['LW', 'RW', 'CM', 'LB', 'RB', 'DM', 'AM', 'CB', 'CF', 'LWB', 'RWB'])
 league = st.text_input("League", value='Enter League Name')
 season = st.text_input("Season", value='Enter Season Name')
-minutethreshold = st.number_input("Minimum Minutes Played", value='Enter Minute Threshold)
+minutethreshold = st.number_input("Minimum Minutes Played", value=0)
 
 if uploaded_file:
     file_path = uploaded_file
