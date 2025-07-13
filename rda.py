@@ -28,18 +28,15 @@ from mplsoccer import PyPizza, add_image, FontManager
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches  # for other shapes if needed
 from scipy.stats import rankdata
-
-
-file_path = r"C:\Users\will-\Downloads\Search results.xlsx"
-data = pd.read_excel(file_path)
+data = pd.read_excel(uploaded_file)
 
 ### USER INPUT
 
-playerrequest = 'C. Hudson-Odoi'
-position = 'LW'
-league = 'Premier League'
-season = '2024/25'
-minutethreshold = 900
+#playerrequest = 'C. Hudson-Odoi'
+#position = 'LW'
+#league = 'Premier League'
+#season = '2024/25'
+#minutethreshold = 900
 
 ### FONT
 font_normal = FontManager('https://raw.githubusercontent.com/googlefonts/roboto/main/'
@@ -50,7 +47,7 @@ font_bold = FontManager('https://raw.githubusercontent.com/google/fonts/main/apa
                         'RobotoSlab[wght].ttf')
 ### IMAGES
 
-rdaimage = Image.open('C:\\Users\\will-\\OneDrive\\Documents\\WT Analysis\\Logos\\rda.png')
+rdaimage = Image.open("RDA.png")
 leagueimage = Image.open(urlopen('https://cdn5.wyscout.com/photos/competition/public/5_140x140.png'))
 
 ## COLUMN MOVE
