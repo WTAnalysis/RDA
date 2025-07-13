@@ -61,7 +61,7 @@ if uploaded_file:
         "WSL": "https://cdn5.wyscout.com/photos/competition/public/g886_140x140.png",
         "WSL2": "https://cdn5.wyscout.com/photos/competition/public/g1330_140x140.png",
         "Women's National League": "https://cdn5.wyscout.com/photos/competition/public/g327_140x140.png",
-        "PGA League":"https://cdn5.wyscout.com/photos/competition/public/g-557_140x140.png",
+        "PGA League": "https://cdn5.wyscout.com/photos/competition/public/g-557_140x140.png",
         "Women's A-League": "https://cdn5.wyscout.com/photos/competition/public/g370_140x140.png",
         "USL Super League": "https://cdn5.wyscout.com/photos/competition/public/g-985_140x140.png",
         "La Liga": "https://cdn5.wyscout.com/photos/competition/public/4_140x140.png",
@@ -76,22 +76,19 @@ if uploaded_file:
         "U18 Premier League": "https://cdn5.wyscout.com/photos/competition/public/g950_140x140.png",
         "Premier League 2": "https://cdn5.wyscout.com/photos/competition/public/g1592_140x140.png",
         "Professional Development League": "https://cdn5.wyscout.com/photos/competition/public/g1191_140x140.png",
-        
         "INT-FIFACWC": "https://cdn5.wyscout.com/photos/competition/public/g72_140x140.png"
-    
     }
     
-    
-    leagueimage2 = league_image_map.get(league, "URL not found")
+    # Safely get league logo only if league is selected
     if league:
-        leagueimage2 = league_logos.get(league)
-        if leagueimage2:
+        leagueimage2 = league_image_map.get(league)
+        if leagueimage2 and leagueimage2.startswith("http"):
             leagueimage = Image.open(urlopen(leagueimage2))
         else:
             st.warning("No logo available for selected league.")
             leagueimage = None
     else:
-        leagueimage = None    ## COLUMN MOVE
+        leagueimage = None
     cols_to_move = ['Birth country', 'Passport country', 'Foot', 'Height', 'Weight', 'On loan']
     all_cols = list(data.columns)
     before = all_cols[:7]
