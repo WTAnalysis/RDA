@@ -82,6 +82,9 @@ if uploaded_file:
     st.dataframe(position_data)
 
     if position_data.empty:
+    # Create player dropdown after filtering
+    unique_players = sorted(position_data['Player'].dropna().unique())
+    playerrequest = st.selectbox("Select Player", options=unique_players)
         st.warning("No players found for that position or below the minute threshold.")
         st.stop()
 
