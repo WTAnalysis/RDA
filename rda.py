@@ -12,11 +12,10 @@ st.title("Player Pizza Chart Generator")
 
 # File uploader
 uploaded_file = st.file_uploader("Upload Excel File", type=["xlsx"])
-playerrequest = st.text_input("Player Name", value='C. Hudson-Odoi')
 position = st.selectbox("Position", options=['LW', 'RW', 'CM', 'LB', 'RB', 'DM', 'AM', 'CB', 'CF', 'LWB', 'RWB'])
-league = st.text_input("League", value='Premier League')
-season = st.text_input("Season", value='2024/25')
-minutethreshold = st.number_input("Minimum Minutes Played", value=900)
+league = st.text_input("League")
+season = st.text_input("Season")
+minutethreshold = st.number_input("Minimum Minutes Played", value=0)
 
 if uploaded_file:
     file_path = uploaded_file
@@ -88,6 +87,11 @@ if uploaded_file:
 
     if playerrequest not in position_data['Player'].values:
         st.warning(f"Player '{playerrequest}' not found in the filtered dataset.")
+
+    # Replace free text with dropdown based on 'Player' column
+    unique_players = sorted(position_data['Player'].dropna().unique())
+    playerrequest = st.selectbox("Select Player", options=unique_players)
+
         st.stop()
 
     
