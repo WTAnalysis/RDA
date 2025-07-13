@@ -8,7 +8,7 @@ from scipy.stats import rankdata
 import os
 
 st.set_page_config(layout="wide")
-st.title("Player Pizza Chart Generator")
+st.title("RDA Insights - Pizza Chart Generator")
 
 # File uploader
 uploaded_file = st.file_uploader("Upload Excel File", type=["xlsx"])
