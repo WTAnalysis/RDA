@@ -16,12 +16,16 @@ if uploaded_file:
     data2 = pd.read_excel(uploaded_file)
     unique_players = sorted(data2['Player'].dropna().unique())
     playerrequest = st.selectbox("Select Player", options=unique_players)
+    position = st.selectbox("Position", options=['', 'LW', 'RW', 'CM', 'LB', 'RB', 'DM', 'AM', 'CB', 'CF', 'LWB', 'RWB'])
+    league = st.text_input("League", value='Enter League Name')
+    season = st.text_input("Season", value='Enter Season Name')
+    minutethreshold = st.number_input("Minimum Minutes Played", value=0)
 else:
     playerrequest = None
-position = st.selectbox("Position", options=['', 'LW', 'RW', 'CM', 'LB', 'RB', 'DM', 'AM', 'CB', 'CF', 'LWB', 'RWB'])
-league = st.text_input("League", value='Enter League Name')
-season = st.text_input("Season", value='Enter Season Name')
-minutethreshold = st.number_input("Minimum Minutes Played", value=0)
+    position = None
+    league = None
+    season = None
+    minutethreshold = None
 
 if uploaded_file:
     file_path = uploaded_file
