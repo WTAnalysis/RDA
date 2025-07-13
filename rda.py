@@ -12,7 +12,12 @@ st.title("Player Pizza Chart Generator")
 
 # File uploader
 uploaded_file = st.file_uploader("Upload Excel File", type=["xlsx"])
-playerrequest = st.text_input("Player Name", value='Enter Player Name')
+if uploaded_file:
+    data2 = pd.read_excel(uploaded_file)
+    unique_players = sorted(data2['Player'].dropna().unique())
+    playerrequest = st.selectbox("Select Player", options=unique_players)
+else:
+    playerrequest = None
 position = st.selectbox("Position", options=['', 'LW', 'RW', 'CM', 'LB', 'RB', 'DM', 'AM', 'CB', 'CF', 'LWB', 'RWB'])
 league = st.text_input("League", value='Enter League Name')
 season = st.text_input("Season", value='Enter Season Name')
