@@ -17,7 +17,7 @@ if uploaded_file:
     unique_players = sorted(data2['Player'].dropna().unique())
     playerrequest = st.selectbox("Select Player", options=unique_players)
     position = st.selectbox("Position", options=['', 'LW', 'RW', 'CM', 'LB', 'RB', 'DM', 'AM', 'CB', 'CF', 'LWB', 'RWB'])
-    league = st.text_input("League", value='Enter League Name')
+    league = st.text_input("League", options = ['', 'Bundesliga', 'Bundesliga Two', 'Championship', 'English 7th Tier', 'La Liga', 'League One', 'League Two', 'Liga Portugal', 'Ligue 1', 'MLS', 'National League', 'National League N/S', 'PGA League', 'Premier League', 'Premier League 2', 'Pro League', 'Professional Development League', 'Scottish Premiership', 'Serie A', 'U18 Premier League', 'USL Super League', 'WSL', 'WSL2', "Women's A-League", "Women's National League"]
     season = st.text_input("Season", value='Enter Season Name')
     minutethreshold = st.number_input("Minimum Minutes Played", value=0)
 else:
@@ -49,8 +49,41 @@ if uploaded_file:
     ### IMAGES
     
     rdaimage = Image.open("RDA.png")
-    leagueimage = Image.open(urlopen('https://cdn5.wyscout.com/photos/competition/public/5_140x140.png'))
+    # Define a dictionary mapping leagues to their image URLs
+    league_image_map = {
+        "Premier League": "https://cdn5.wyscout.com/photos/competition/public/5_140x140.png",
+        "League One": "https://cdn5.wyscout.com/photos/competition/public/64_140x140.png",
+        "Championship": "https://cdn5.wyscout.com/photos/competition/public/18_140x140.png",
+        "Serie A": "https://cdn5.wyscout.com/photos/competition/public/1_140x140.png",
+        "League Two": "https://cdn5.wyscout.com/photos/competition/public/67_140x140.png",
+        "Scottish Premiership": "https://cdn5.wyscout.com/photos/competition/public/17_140x140.png",
+        "MLS": "https://cdn5.wyscout.com/photos/competition/public/324_140x140.png",
+        "WSL": "https://cdn5.wyscout.com/photos/competition/public/g886_140x140.png",
+        "WSL2": "https://cdn5.wyscout.com/photos/competition/public/g1330_140x140.png",
+        "Women's National League": "https://cdn5.wyscout.com/photos/competition/public/g327_140x140.png",
+        "PGA League":"https://cdn5.wyscout.com/photos/competition/public/g-557_140x140.png",
+        "Women's A-League": "https://cdn5.wyscout.com/photos/competition/public/g370_140x140.png",
+        "USL Super League": "https://cdn5.wyscout.com/photos/competition/public/g-985_140x140.png",
+        "La Liga": "https://cdn5.wyscout.com/photos/competition/public/4_140x140.png",
+        "Bundesliga": "https://cdn5.wyscout.com/photos/competition/public/2_140x140.png",
+        "Bundesliga Two": "https://cdn5.wyscout.com/photos/competition/public/19_140x140.png",
+        "Ligue 1": "https://cdn5.wyscout.com/photos/competition/public/3_140x140.png",
+        "Pro League": "https://cdn5.wyscout.com/photos/competition/public/28_140x140.png",
+        "Liga Portugal": "https://cdn5.wyscout.com/photos/competition/public/9_140x140.png",
+        "National League": "https://cdn5.wyscout.com/photos/competition/public/135_140x140.png",
+        "National League N/S": "https://cdn5.wyscout.com/photos/competition/public/135_140x140.png",
+        "English 7th Tier": "https://cdn5.wyscout.com/photos/competition/public/555_140x140.png",
+        "U18 Premier League": "https://cdn5.wyscout.com/photos/competition/public/g950_140x140.png",
+        "Premier League 2": "https://cdn5.wyscout.com/photos/competition/public/g1592_140x140.png",
+        "Professional Development League": "https://cdn5.wyscout.com/photos/competition/public/g1191_140x140.png",
+        
+        "INT-FIFACWC": "https://cdn5.wyscout.com/photos/competition/public/g72_140x140.png"
     
+    }
+    
+    
+    leagueimage2 = league_image_map.get(league, "URL not found")
+    leagueimage = Image.open(urlopen(f'{leagueimage2}'))    
     ## COLUMN MOVE
     cols_to_move = ['Birth country', 'Passport country', 'Foot', 'Height', 'Weight', 'On loan']
     all_cols = list(data.columns)
