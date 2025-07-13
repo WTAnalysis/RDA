@@ -13,7 +13,7 @@ st.title("Player Pizza Chart Generator")
 # File uploader
 uploaded_file = st.file_uploader("Upload Excel File", type=["xlsx"])
 playerrequest = st.text_input("Player Name", value='Enter Player Name')
-position = st.selectbox("Position", value='Select Position', options=['LW', 'RW', 'CM', 'LB', 'RB', 'DM', 'AM', 'CB', 'CF', 'LWB', 'RWB'])
+position = st.selectbox("Position", options=['', 'LW', 'RW', 'CM', 'LB', 'RB', 'DM', 'AM', 'CB', 'CF', 'LWB', 'RWB'])
 league = st.text_input("League", value='Enter League Name')
 season = st.text_input("Season", value='Enter Season Name')
 minutethreshold = st.number_input("Minimum Minutes Played", value=0)
