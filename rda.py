@@ -552,7 +552,15 @@ if uploaded_file:
                 "Offensive duels per 90","Offensive duels won, %",
                 "Aerial duels won, %","Successful dribbles, %","Successful attacking actions per 90"
             ],
-            "W": [
+            "LW": [
+                "Touches in box per 90","Shots per 90","Shots on target, %",
+                "xG per 90","Non-penalty goals per 90",
+                "Progressive runs per 90","Accurate crosses, %","Shot assists per 90",
+                "xA per 90","Assists per 90",
+                "Offensive duels per 90","Offensive duels won, %",
+                "Dribbles per 90","Successful dribbles, %","Successful attacking actions per 90"
+            ],
+            "RW": [
                 "Touches in box per 90","Shots per 90","Shots on target, %",
                 "xG per 90","Non-penalty goals per 90",
                 "Progressive runs per 90","Accurate crosses, %","Shot assists per 90",
@@ -619,7 +627,15 @@ if uploaded_file:
                 "Offensive duels","\nOffensive \nduels won %",
                 "\nAerial \nduels won %","\nSuccessful \ndribbles %","\nSuccessful \nattacking actions"
             ],
-            "W": [
+            "RW": [
+                "Touches in box","Shots","\nShots on \ntarget %",
+                "xG","Non-penalty goals",
+                "Progressive runs","Accurate crosses %","Shot assists",
+                "xA","Assists",
+                "Offensive duels","\nOffensive \nduels won %",
+                "Dribbles","\nSuccessful \ndribbles %","\nSuccessful \nattacking actions"
+            ],
+            "LW": [
                 "Touches in box","Shots","\nShots on \ntarget %",
                 "xG","Non-penalty goals",
                 "Progressive runs","Accurate crosses %","Shot assists",
