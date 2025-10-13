@@ -12,6 +12,7 @@ st.title("RDA Insights - Pizza Chart Generator")
 
 # File uploader
 uploaded_file = st.file_uploader("Upload Excel File", type=["xlsx"])
+data_original = pd.read_excel(uploaded_file)
 if uploaded_file:
     data2 = pd.read_excel(uploaded_file)
     unique_players = sorted(data2['Player'].dropna().unique())
