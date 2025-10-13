@@ -477,146 +477,172 @@ if uploaded_file:
     pass
     with tab_radar:
         import numpy as np
+        import pandas as pd
         import matplotlib.pyplot as plt
         from mplsoccer import Radar, FontManager, add_image
-        from matplotlib.offsetbox import AnnotationBbox, OffsetImage
+        import streamlit as st
     
-        # --- Work off a clean copy so we don't use the percentile-mutated data ---
-        data_raw = data_original if "data_original" in globals() else data.copy()
+        # ---------- 1) Start from a pristine copy so 'Position' exists ----------
+        if "data_original" not in globals():
+            st.error("Internal setup error: `data_original` not found. Make sure you set `data_original = pd.read_excel(uploaded_file)` right after upload.")
+            st.stop()
     
-        # --- Position normalization & filter (matches your selection behaviour) ---
-        df = data_raw.copy()
-        if "Position" in df.columns:
-            df["Position"] = df["Position"].str.replace("LWB", "LB", regex=False)
-            df["Position"] = df["Position"].str.replace("RWB", "RB", regex=False)
+        df = data_original.copy()
     
-        # If your dataset has composite positions in a single string (e.g. "LW/AM"),
-        # keep players where the string contains the chosen position.
+        # ---------- 2) Normalise positions & filter by selected position ----------
+        if "Position" not in df.columns:
+            st.error("Your data has no 'Position' column. The radar cannot be filtered.")
+            st.stop()
+    
+        # map wing-backs into full-back buckets for radar
+        df["Position"] = df["Position"].astype(str).str.replace("LWB", "LB", regex=False)
+        df["Position"] = df["Position"].astype(str).str.replace("RWB", "RB", regex=False)
+    
+        if not position:
+            st.warning("Pick a position to build the radar.")
+            st.stop()
+    
+        # contains-match so strings like "LW/AM" still match
         df = df[df["Position"].str.contains(position, case=False, na=False)]
     
-        # --- Metric sets (columns) & pretty labels (params) per position ---
-        pos_cols = {}
-        pos_params = {}
+        if df.empty:
+            st.error(f"No rows for position '{position}' after filtering.")
+            st.stop()
     
-        pos_cols["CM"] = [
-            "Non-penalty goals per 90","xG per 90","xA per 90",
-            "Shot assists per 90","Touches in box per 90",
-            "Accurate passes, %","Accurate progressive passes, %","Progressive runs per 90",
-            "Accurate passes to final third, %","Accurate crosses, %",
-            "Successful defensive actions per 90","Defensive duels won, %",
-            "PAdj Sliding tackles","Shots blocked per 90","PAdj Interceptions"
-        ]
-        pos_params["CM"] = [
-            "Non-penalty goals","xG","xA",
-            "Shot assists","Touches in box",
-            "Accurate passes %","\nAccurate progressive \npasses %","Progressive runs",
-            "\nAccurate passes \nto final third %","Accurate crosses %",
-            "\nSuccessful \ndefensive actions","\nDefensive \nduels won %",
-            "\nPAdj Sliding \ntackles","Shots blocked","\nPAdj \nInterceptions"
-        ]
-    
-        for fb_pos in ["LB","RB"]:
-            pos_cols[fb_pos] = [
+        # ---------- 3) Metric templates ----------
+        pos_cols = {
+            "CM": [
+                "Non-penalty goals per 90","xG per 90","xA per 90",
+                "Shot assists per 90","Touches in box per 90",
+                "Accurate passes, %","Accurate progressive passes, %","Progressive runs per 90",
+                "Accurate passes to final third, %","Accurate crosses, %",
+                "Successful defensive actions per 90","Defensive duels won, %",
+                "PAdj Sliding tackles","Shots blocked per 90","PAdj Interceptions"
+            ],
+            "LB": [
                 "Shot assists per 90","xA per 90","Assists per 90",
                 "xG per 90","Successful attacking actions per 90",
                 "Accurate passes, %","Accurate progressive passes, %","Crosses per 90",
                 "Accurate crosses, %","Progressive runs per 90",
                 "Successful defensive actions per 90","Defensive duels won, %",
                 "PAdj Sliding tackles","Shots blocked per 90","PAdj Interceptions"
-            ]
-            pos_params[fb_pos] = [
+            ],
+            "RB": [
+                "Shot assists per 90","xA per 90","Assists per 90",
+                "xG per 90","Successful attacking actions per 90",
+                "Accurate passes, %","Accurate progressive passes, %","Crosses per 90",
+                "Accurate crosses, %","Progressive runs per 90",
+                "Successful defensive actions per 90","Defensive duels won, %",
+                "PAdj Sliding tackles","Shots blocked per 90","PAdj Interceptions"
+            ],
+            "CB": [
+                "Offensive duels won, %","Shot assists per 90","xA per 90",
+                "xG per 90","Non-penalty goals per 90",
+                "Accurate passes, %","Accurate lateral passes, %","Accurate short / medium passes, %",
+                "Progressive passes per 90","Accurate progressive passes, %",
+                "Defensive duels won, %","Successful defensive actions per 90",
+                "Aerial duels won, %","PAdj Interceptions","Shots blocked per 90"
+            ],
+            "CF": [
+                "Touches in box per 90","Shots per 90","Shots on target, %",
+                "xG per 90","Non-penalty goals per 90",
+                "Accurate passes, %","Accurate smart passes, %","Shot assists per 90",
+                "xA per 90","Assists per 90",
+                "Offensive duels per 90","Offensive duels won, %",
+                "Aerial duels won, %","Successful dribbles, %","Successful attacking actions per 90"
+            ],
+            "W": [
+                "Touches in box per 90","Shots per 90","Shots on target, %",
+                "xG per 90","Non-penalty goals per 90",
+                "Progressive runs per 90","Accurate crosses, %","Shot assists per 90",
+                "xA per 90","Assists per 90",
+                "Offensive duels per 90","Offensive duels won, %",
+                "Dribbles per 90","Successful dribbles, %","Successful attacking actions per 90"
+            ],
+            "DM": [
+                "Successful attacking actions per 90","Shot assists per 90","xA per 90",
+                "Shots per 90","xG per 90",
+                "Accurate passes, %","Accurate short / medium passes, %","Accurate through passes, %",
+                "Progressive passes per 90","Accurate progressive passes, %",
+                "Successful defensive actions per 90","Defensive duels per 90",
+                "Defensive duels won, %","PAdj Sliding tackles","PAdj Interceptions"
+            ],
+            "AM": [
+                "Touches in box per 90","Shots per 90","Goal conversion, %",
+                "Non-penalty goals per 90","xG per 90",
+                "Accurate passes to penalty area, %","Accurate crosses, %","Shot assists per 90",
+                "xA per 90","Assists per 90",
+                "Offensive duels per 90","Offensive duels won, %","Successful attacking actions per 90",
+                "Dribbles per 90","Successful dribbles, %"
+            ],
+        }
+    
+        pos_params = {
+            "CM": [
+                "Non-penalty goals","xG","xA",
+                "Shot assists","Touches in box",
+                "Accurate passes %","\nAccurate progressive \npasses %","Progressive runs",
+                "\nAccurate passes \nto final third %","Accurate crosses %",
+                "\nSuccessful \ndefensive actions","\nDefensive \nduels won %",
+                "\nPAdj Sliding \ntackles","Shots blocked","\nPAdj \nInterceptions"
+            ],
+            "LB": [
                 "Shot assists","xA","Assists",
                 "xG","\nSuccessful \nattacking actions",
                 "Accurate passes %","\nAccurate progressive \npasses %","Crosses",
                 "Accurate crosses %","Progressive runs",
                 "\nSuccessful \ndefensive actions","\nDefensive \nduels won %",
                 "\nPAdj Sliding \ntackles","Shots blocked","\nPAdj \nInterceptions"
-            ]
-    
-        pos_cols["CB"] = [
-            "Offensive duels won, %","Shot assists per 90","xA per 90",
-            "xG per 90","Non-penalty goals per 90",
-            "Accurate passes, %","Accurate lateral passes, %","Accurate short / medium passes, %",
-            "Progressive passes per 90","Accurate progressive passes, %",
-            "Defensive duels won, %","Successful defensive actions per 90",
-            "Aerial duels won, %","PAdj Interceptions","Shots blocked per 90"
-        ]
-        pos_params["CB"] = [
-            "\nOffensive \nduels won %","Shot assists","xA",
-            "xG","\nNon-penalty \ngoals",
-            "Accurate passes %","\nAccurate lateral \npasses %","\nAccurate short \n& medium passes %",
-            "\nProgressive \npasses","\nAccurate progressive \npasses %",
-            "\nDefensive \nduels won %","\nSuccessful \ndefensive actions",
-            "\nAerial \nduels won %","\nPAdj \nInterceptions","Shots blocked"
-        ]
-    
-        pos_cols["CF"] = [
-            "Touches in box per 90","Shots per 90","Shots on target, %",
-            "xG per 90","Non-penalty goals per 90",
-            "Accurate passes, %","Accurate smart passes, %","Shot assists per 90",
-            "xA per 90","Assists per 90",
-            "Offensive duels per 90","Offensive duels won, %",
-            "Aerial duels won, %","Successful dribbles, %","Successful attacking actions per 90"
-        ]
-        pos_params["CF"] = [
-            "Touches in box","Shots","\nShots on \ntarget %",
-            "xG","Non-penalty goals",
-            "Accurate passes %","\nAccurate smart \npasses %","Shot assists",
-            "xA","Assists",
-            "Offensive duels","\nOffensive \nduels won %",
-            "\nAerial \nduels won %","\nSuccessful \ndribbles %","\nSuccessful \nattacking actions"
-        ]
-    
-        pos_cols["W"] = [
-            "Touches in box per 90","Shots per 90","Shots on target, %",
-            "xG per 90","Non-penalty goals per 90",
-            "Progressive runs per 90","Accurate crosses, %","Shot assists per 90",
-            "xA per 90","Assists per 90",
-            "Offensive duels per 90","Offensive duels won, %",
-            "Dribbles per 90","Successful dribbles, %","Successful attacking actions per 90"
-        ]
-        pos_params["W"] = [
-            "Touches in box","Shots","\nShots on \ntarget %",
-            "xG","Non-penalty goals",
-            "Progressive runs","Accurate crosses %","Shot assists",
-            "xA","Assists",
-            "Offensive duels","\nOffensive \nduels won %",
-            "Dribbles","\nSuccessful \ndribbles %","\nSuccessful \nattacking actions"
-        ]
-    
-        pos_cols["DM"] = [
-            "Successful attacking actions per 90","Shot assists per 90","xA per 90",
-            "Shots per 90","xG per 90",
-            "Accurate passes, %","Accurate short / medium passes, %","Accurate through passes, %",
-            "Progressive passes per 90","Accurate progressive passes, %",
-            "Successful defensive actions per 90","Defensive duels per 90",
-            "Defensive duels won, %","PAdj Sliding tackles","PAdj Interceptions"
-        ]
-        pos_params["DM"] = [
-            "\nSuccessful \nattacking actions","Shot assists","xA",
-            "Shots","xG",
-            "Accurate passes %","\nAccurate \nshort/medium passes %","\nAccurate \nthrough passes %",
-            "\nProgressive \npasses","\nAccurate \nprogressive passes %",
-            "\nSuccessful \ndefensive actions","Defensive duels",
-            "\nDefensive \nduels won %","\nPAdj \nSliding tackles","\nPAdj \nInterceptions"
-        ]
-    
-        pos_cols["AM"] = [
-            "Touches in box per 90","Shots per 90","Goal conversion, %",
-            "Non-penalty goals per 90","xG per 90",
-            "Accurate passes to penalty area, %","Accurate crosses, %","Shot assists per 90",
-            "xA per 90","Assists per 90",
-            "Offensive duels per 90","Offensive duels won, %","Successful attacking actions per 90",
-            "Dribbles per 90","Successful dribbles, %"
-        ]
-        pos_params["AM"] = [
-            "Touches in box","Shots","Goal conversion %",
-            "Non-penalty goals","xG",
-            "\nAccurate passes \nto penalty area %","\nAccurate \ncrosses %","Shot assists",
-            "xA","Assists",
-            "Offensive duels","\nOffensive \nduels won %","\nSuccessful \nattacking actions",
-            "Dribbles","\nSuccessful \ndribbles %"
-        ]
+            ],
+            "RB": [
+                "Shot assists","xA","Assists",
+                "xG","\nSuccessful \nattacking actions",
+                "Accurate passes %","\nAccurate progressive \npasses %","Crosses",
+                "Accurate crosses %","Progressive runs",
+                "\nSuccessful \ndefensive actions","\nDefensive \nduels won %",
+                "\nPAdj Sliding \ntackles","Shots blocked","\nPAdj \nInterceptions"
+            ],
+            "CB": [
+                "\nOffensive \nduels won %","Shot assists","xA",
+                "xG","\nNon-penalty \ngoals",
+                "Accurate passes %","\nAccurate lateral \npasses %","\nAccurate short \n& medium passes %",
+                "\nProgressive \npasses","\nAccurate progressive \npasses %",
+                "\nDefensive \nduels won %","\nSuccessful \ndefensive actions",
+                "\nAerial \nduels won %","\nPAdj \nInterceptions","Shots blocked"
+            ],
+            "CF": [
+                "Touches in box","Shots","\nShots on \ntarget %",
+                "xG","Non-penalty goals",
+                "Accurate passes %","\nAccurate smart \npasses %","Shot assists",
+                "xA","Assists",
+                "Offensive duels","\nOffensive \nduels won %",
+                "\nAerial \nduels won %","\nSuccessful \ndribbles %","\nSuccessful \nattacking actions"
+            ],
+            "W": [
+                "Touches in box","Shots","\nShots on \ntarget %",
+                "xG","Non-penalty goals",
+                "Progressive runs","Accurate crosses %","Shot assists",
+                "xA","Assists",
+                "Offensive duels","\nOffensive \nduels won %",
+                "Dribbles","\nSuccessful \ndribbles %","\nSuccessful \nattacking actions"
+            ],
+            "DM": [
+                "\nSuccessful \nattacking actions","Shot assists","xA",
+                "Shots","xG",
+                "Accurate passes %","\nAccurate \nshort/medium passes %","\nAccurate \nthrough passes %",
+                "\nProgressive \npasses","\nAccurate \nprogressive passes %",
+                "\nSuccessful \ndefensive actions","Defensive duels",
+                "\nDefensive \nduels won %","\nPAdj \nSliding tackles","\nPAdj \nInterceptions"
+            ],
+            "AM": [
+                "Touches in box","Shots","Goal conversion %",
+                "Non-penalty goals","xG",
+                "\nAccurate passes \nto penalty area %","\nAccurate \ncrosses %","Shot assists",
+                "xA","Assists",
+                "Offensive duels","\nOffensive \nduels won %","\nSuccessful \nattacking actions",
+                "Dribbles","\nSuccessful \ndribbles %"
+            ],
+        }
     
         cols = pos_cols.get(position, [])
         params = pos_params.get(position, [])
@@ -624,27 +650,37 @@ if uploaded_file:
             st.warning(f"No radar metric template configured for position: {position}")
             st.stop()
     
-        # Guard: ensure all columns exist
+        # ---------- 4) Ensure numeric dtypes for metrics ----------
         missing = [c for c in cols if c not in df.columns]
         if missing:
-            st.error(f"Your data is missing these columns for {position}: {missing}")
+            st.error(f"Missing columns for {position}: {missing}")
             st.stop()
     
-        # --- Player row ---
+        # coerce to numeric just in case
+        for c in cols:
+            df[c] = pd.to_numeric(df[c], errors="coerce")
+    
+        # ---------- 5) Player row ----------
+        if "Player" not in df.columns:
+            st.error("Your data has no 'Player' column, cannot find the player.")
+            st.stop()
+    
+        if not playerrequest:
+            st.warning("Select a player to render the radar.")
+            st.stop()
+    
         playerdata = df.loc[df["Player"] == playerrequest]
         if playerdata.empty:
             st.error(f"Player '{playerrequest}' not found in the filtered {position} dataset.")
             st.stop()
     
-        # --- Compute low/high (min/max), league averages (all rows in filtered df) ---
+        # ---------- 6) Build ranges, averages, player values ----------
         low = df[cols].min().values.round(2).tolist()
         high = df[cols].max().values.round(2).tolist()
         league_avg = df[cols].mean().values.round(2).tolist()
-    
-        # Player values (ensure 1D list of floats)
         player_vals = playerdata[cols].iloc[0].values.round(2).tolist()
     
-        # --- Radar setup ---
+        # ---------- 7) Radar figure ----------
         font_normal = FontManager('https://raw.githubusercontent.com/googlefonts/roboto/main/src/hinted/Roboto-Regular.ttf')
         font_italic = FontManager('https://raw.githubusercontent.com/googlefonts/roboto/main/src/hinted/Roboto-Italic.ttf')
         font_bold = FontManager('https://raw.githubusercontent.com/google/fonts/main/apache/robotoslab/RobotoSlab[wght].ttf')
@@ -661,9 +697,9 @@ if uploaded_file:
     
         fig, ax = radar.setup_axis()
         ax.set_facecolor('#F2F2F2')
-        _ = radar.draw_circles(ax=ax, facecolor='#b3b3b3', edgecolor='#b3b3b3')
+        radar.draw_circles(ax=ax, facecolor='#b3b3b3', edgecolor='#b3b3b3')
     
-        # Player vs League Average
+        # player vs league avg
         radar.draw_radar_compare(
             player_vals, league_avg, ax=ax,
             kwargs_radar={'facecolor': '#A7192B', 'alpha': 1},
@@ -671,26 +707,28 @@ if uploaded_file:
         )
         radar.draw_range_labels(ax=ax, fontsize=10, fontproperties=font_italic.prop)
         radar.draw_param_labels(ax=ax, fontsize=12.5, fontproperties=font_bold.prop, color='black')
-        _ = radar.spoke(ax=ax, color='#a6a4a1', linestyle='--', zorder=2)
+        radar.spoke(ax=ax, color='#a6a4a1', linestyle='--', zorder=2)
     
-        # Header
+        # Title
         ax_limits = ax.get_xlim(), ax.get_ylim()
         cx = (ax_limits[0][0] + ax_limits[0][1]) / 2
-        cy = (ax_limits[1][0] + ax_limits[1][1]) / 2
         ax.text(
             cx, 6.65, f"{playerrequest} compared to {league} ({position}) average in {season}",
             size=17, fontproperties=font_bold.prop, color="#000000",
             ha="center", bbox=dict(facecolor='#f2f2f2', alpha=0.5, edgecolor='#f2f2f2')
         )
     
-        # Logos (reuses your already-loaded images)
+        # Logos (safe if not provided)
         try:
-            ax_image = add_image(rdaimage, fig, left=0.775, bottom=0.725, width=0.15, height=0.15)
-            ax_image = add_image(leagueimage, fig, left=0.135, bottom=0.115, width=0.125, height=0.125)
+            add_image(rdaimage, fig, left=0.775, bottom=0.725, width=0.15, height=0.15)
         except Exception:
-            pass  # if images aren't available, keep going
+            pass
+        try:
+            add_image(leagueimage, fig, left=0.135, bottom=0.115, width=0.125, height=0.125)
+        except Exception:
+            pass
     
-        # Legend-like swatches + captions
+        # Legend chips + captions
         fig.text(0.17, 0.8525, f"{playerrequest}", size=10, fontproperties=font_bold.prop, color="#000000")
         fig.text(0.17, 0.8275, "League Average", size=10, fontproperties=font_bold.prop, color="#000000")
         fig.text(0.67, 0.12, "Data from Wyscout | Minimum 500 minutes played", size=8, fontproperties=font_bold.prop, color="#000000")
@@ -698,7 +736,7 @@ if uploaded_file:
             plt.Rectangle((0.15, 0.85), 0.015, 0.015, fill=True, color="#A7192B", transform=fig.transFigure, figure=fig),
             plt.Rectangle((0.15, 0.825), 0.015, 0.015, fill=True, color="#C79A53", transform=fig.transFigure, figure=fig),
         ])
-
-    st.pyplot(fig)
+    
+        st.pyplot(fig)
 else:
     st.warning("Please upload an Excel file.")
