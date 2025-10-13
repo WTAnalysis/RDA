@@ -491,21 +491,35 @@ if uploaded_file:
         df = data_original.copy()
     
         # ---------- 2) Normalise positions & filter by selected position ----------
+        df = data_original.copy() if "data_original" in globals() else data.copy()
+        
+        # robust position name cleanup
+        replacements = {
+            'LWF': 'LW', 'RWF': 'RW',
+            'LCMF': 'CM', 'RCMF': 'CM',
+            'DMF': 'DM', 'RDMF': 'DM', 'LDMF': 'DM',
+            'AMF': 'AM', 'RAMF': 'RW', 'LAMF': 'LW',
+            'RCB': 'CB', 'LCB': 'CB',
+            'LWB': 'LB', 'RWB': 'RB',
+        }
+        
         if "Position" not in df.columns:
             st.error("Your data has no 'Position' column. The radar cannot be filtered.")
             st.stop()
-    
-        # map wing-backs into full-back buckets for radar
-        df["Position"] = df["Position"].astype(str).str.replace("LWB", "LB", regex=False)
-        df["Position"] = df["Position"].astype(str).str.replace("RWB", "RB", regex=False)
-    
+        
+        # perform replacements safely even when multiple positions are listed
+        pos = df["Position"].astype(str)
+        for src, dst in replacements.items():
+            pos = pos.str.replace(fr'\b{src}\b', dst, regex=True)
+        df["Position"] = pos
+        
         if not position:
             st.warning("Pick a position to build the radar.")
             st.stop()
-    
-        # contains-match so strings like "LW/AM" still match
-        df = df[df["Position"].str.contains(position, case=False, na=False)]
-    
+        
+        # match tokens, not substrings, so 'RW' doesn't grab 'CRW'
+        df = df[df["Position"].str.contains(fr'\b{position}\b', case=False, na=False)]
+        
         if df.empty:
             st.error(f"No rows for position '{position}' after filtering.")
             st.stop()
