@@ -137,7 +137,7 @@ if uploaded_file:
         st.warning(f"Player '{playerrequest}' not found in the filtered dataset.")
         st.stop()
 
-    tab_pizza, tab_radar = st.tabs(["📊 Pizza", "🧭 Radar"])
+    tab_pizza, tab_radar, tab_raw_radar = st.tabs(["📊 Pizza", "🧭 Radar", "📈 Raw Radar"])
     with tab_pizza:
         # ⬇️ YOUR EXISTING PIZZA CODE GOES INSIDE THIS BLOCK ⬇️
         # (No changes required to your current pizza logic)
@@ -767,6 +767,245 @@ if uploaded_file:
             plt.Rectangle((0.15, 0.85), 0.015, 0.015, fill=True, color="#A7192B", transform=fig.transFigure, figure=fig),
             plt.Rectangle((0.15, 0.825), 0.015, 0.015, fill=True, color="#C79A53", transform=fig.transFigure, figure=fig),
         ])
+    
+        st.pyplot(fig)
+
+    with tab_raw_radar:
+        import numpy as np
+        import pandas as pd
+        import matplotlib.pyplot as plt
+        from mplsoccer import Radar, FontManager, add_image
+        import streamlit as st
+    
+        # --- 1) Start from original uploaded data (no 'rawdata' var) ---
+        if "data_original" not in globals():
+            st.error("Internal setup error: `data_original` not found. Make sure it's defined right after upload.")
+            st.stop()
+        df = data_original.copy()
+    
+        # --- 2) Normalise/clean positions then filter by selected position & minutes ---
+        replacements = {
+            'LWF':'LW','RWF':'RW','LCMF':'CM','RCMF':'CM',
+            'DMF':'DM','RDMF':'DM','LDMF':'DM','AMF':'AM',
+            'RAMF':'RW','LAMF':'LW','RCB':'CB','LCB':'CB',
+            'LWB': 'LB','RWB': 'RB'
+        }
+        if "Position" not in df.columns:
+            st.error("Your data has no 'Position' column. Cannot build Raw Radar.")
+            st.stop()
+    
+        pos_series = df["Position"].astype(str)
+        for src, dst in replacements.items():
+            pos_series = pos_series.str.replace(fr"\b{src}\b", dst, regex=True)
+        df["Position"] = pos_series
+    
+        if not position:
+            st.warning("Pick a position to build the Raw Radar.")
+            st.stop()
+    
+        df = df[df["Position"].str.contains(fr"\b{position}\b", case=False, na=False)]
+        if "Minutes played" in df.columns and minutethreshold is not None:
+            df = df[df["Minutes played"] >= minutethreshold]
+    
+        if df.empty:
+            st.error(f"No rows for position '{position}' at the selected minute threshold.")
+            st.stop()
+    
+        if "Player" not in df.columns:
+            st.error("Your data has no 'Player' column.")
+            st.stop()
+    
+        if not playerrequest:
+            st.warning("Select a player to render the Raw Radar.")
+            st.stop()
+    
+        playerdata = df.loc[df["Player"] == playerrequest]
+        if playerdata.empty:
+            st.error(f"Player '{playerrequest}' not found in the filtered {position} dataset.")
+            st.stop()
+    
+        # --- 3) Metric templates (same as your radar) ---
+        pos_cols = {
+            "CM": ["Non-penalty goals per 90","xG per 90","xA per 90",
+                   "Shot assists per 90","Touches in box per 90",
+                   "Accurate passes, %","Accurate progressive passes, %","Progressive runs per 90",
+                   "Accurate passes to final third, %","Accurate crosses, %",
+                   "Successful defensive actions per 90","Defensive duels won, %",
+                   "PAdj Sliding tackles","Shots blocked per 90","PAdj Interceptions"],
+            "LB": ["Shot assists per 90","xA per 90","Assists per 90",
+                   "xG per 90","Successful attacking actions per 90",
+                   "Accurate passes, %","Accurate progressive passes, %","Crosses per 90",
+                   "Accurate crosses, %","Progressive runs per 90",
+                   "Successful defensive actions per 90","Defensive duels won, %",
+                   "PAdj Sliding tackles","Shots blocked per 90","PAdj Interceptions"],
+            "RB": ["Shot assists per 90","xA per 90","Assists per 90",
+                   "xG per 90","Successful attacking actions per 90",
+                   "Accurate passes, %","Accurate progressive passes, %","Crosses per 90",
+                   "Accurate crosses, %","Progressive runs per 90",
+                   "Successful defensive actions per 90","Defensive duels won, %",
+                   "PAdj Sliding tackles","Shots blocked per 90","PAdj Interceptions"],
+            "CB": ["Offensive duels won, %","Shot assists per 90","xA per 90",
+                   "xG per 90","Non-penalty goals per 90",
+                   "Accurate passes, %","Accurate lateral passes, %","Accurate short / medium passes, %",
+                   "Progressive passes per 90","Accurate progressive passes, %",
+                   "Defensive duels won, %","Successful defensive actions per 90",
+                   "Aerial duels won, %","PAdj Interceptions","Shots blocked per 90"],
+            "CF": ["Touches in box per 90","Shots per 90","Shots on target, %",
+                   "xG per 90","Non-penalty goals per 90",
+                   "Accurate passes, %","Accurate smart passes, %","Shot assists per 90",
+                   "xA per 90","Assists per 90",
+                   "Offensive duels per 90","Offensive duels won, %",
+                   "Aerial duels won, %","Successful dribbles, %","Successful attacking actions per 90"],
+            "LW": ["Touches in box per 90","Shots per 90","Shots on target, %",
+                   "xG per 90","Non-penalty goals per 90",
+                   "Progressive runs per 90","Accurate crosses, %","Shot assists per 90",
+                   "xA per 90","Assists per 90",
+                   "Offensive duels per 90","Offensive duels won, %",
+                   "Dribbles per 90","Successful dribbles, %","Successful attacking actions per 90"],
+            "RW": ["Touches in box per 90","Shots per 90","Shots on target, %",
+                   "xG per 90","Non-penalty goals per 90",
+                   "Progressive runs per 90","Accurate crosses, %","Shot assists per 90",
+                   "xA per 90","Assists per 90",
+                   "Offensive duels per 90","Offensive duels won, %",
+                   "Dribbles per 90","Successful dribbles, %","Successful attacking actions per 90"],
+            "DM": ["Successful attacking actions per 90","Shot assists per 90","xA per 90",
+                   "Shots per 90","xG per 90",
+                   "Accurate passes, %","Accurate short / medium passes, %","Accurate through passes, %",
+                   "Progressive passes per 90","Accurate progressive passes, %",
+                   "Successful defensive actions per 90","Defensive duels per 90",
+                   "Defensive duels won, %","PAdj Sliding tackles","PAdj Interceptions"],
+            "AM": ["Touches in box per 90","Shots per 90","Goal conversion, %",
+                   "Non-penalty goals per 90","xG per 90",
+                   "Accurate passes to penalty area, %","Accurate crosses, %","Shot assists per 90",
+                   "xA per 90","Assists per 90",
+                   "Offensive duels per 90","Offensive duels won, %","Successful attacking actions per 90",
+                   "Dribbles per 90","Successful dribbles, %"],
+        }
+        pos_params = {
+            "CM": ["Non-penalty goals","xG","xA","Shot assists","Touches in box",
+                   "Accurate passes %","\nAccurate progressive \npasses %","Progressive runs",
+                   "\nAccurate passes \nto final third %","Accurate crosses %",
+                   "\nSuccessful \ndefensive actions","\nDefensive \nduels won %",
+                   "\nPAdj Sliding \ntackles","Shots blocked","\nPAdj \nInterceptions"],
+            "LB": ["Shot assists","xA","Assists","xG","\nSuccessful \nattacking actions",
+                   "Accurate passes %","\nAccurate progressive \npasses %","Crosses",
+                   "Accurate crosses %","Progressive runs",
+                   "\nSuccessful \ndefensive actions","\nDefensive \nduels won %",
+                   "\nPAdj Sliding \ntackles","Shots blocked","\nPAdj \nInterceptions"],
+            "RB": ["Shot assists","xA","Assists","xG","\nSuccessful \nattacking actions",
+                   "Accurate passes %","\nAccurate progressive \npasses %","Crosses",
+                   "Accurate crosses %","Progressive runs",
+                   "\nSuccessful \ndefensive actions","\nDefensive \nduels won %",
+                   "\nPAdj Sliding \ntackles","Shots blocked","\nPAdj \nInterceptions"],
+            "CB": ["\nOffensive \nduels won %","Shot assists","xA","xG","\nNon-penalty \ngoals",
+                   "Accurate passes %","\nAccurate lateral \npasses %","\nAccurate short \n& medium passes %",
+                   "\nProgressive \npasses","\nAccurate progressive \npasses %",
+                   "\nDefensive \nduels won %","\nSuccessful \ndefensive actions",
+                   "\nAerial \nduels won %","\nPAdj \nInterceptions","Shots blocked"],
+            "CF": ["Touches in box","Shots","\nShots on \ntarget %","xG","Non-penalty goals",
+                   "Accurate passes %","\nAccurate smart \npasses %","Shot assists",
+                   "xA","Assists","Offensive duels","\nOffensive \nduels won %",
+                   "\nAerial \nduels won %","\nSuccessful \ndribbles %","\nSuccessful \nattacking actions"],
+            "LW": ["Touches in box","Shots","\nShots on \ntarget %","xG","Non-penalty goals",
+                   "Progressive runs","Accurate crosses %","Shot assists","xA","Assists",
+                   "Offensive duels","\nOffensive \nduels won %","Dribbles","\nSuccessful \ndribbles %","\nSuccessful \nattacking actions"],
+            "RW": ["Touches in box","Shots","\nShots on \ntarget %","xG","Non-penalty goals",
+                   "Progressive runs","Accurate crosses %","Shot assists","xA","Assists",
+                   "Offensive duels","\nOffensive \nduels won %","Dribbles","\nSuccessful \ndribbles %","\nSuccessful \nattacking actions"],
+            "DM": ["\nSuccessful \nattacking actions","Shot assists","xA","Shots","xG",
+                   "Accurate passes %","\nAccurate \nshort/medium passes %","\nAccurate \nthrough passes %",
+                   "\nProgressive \npasses","\nAccurate \nprogressive passes %",
+                   "\nSuccessful \ndefensive actions","Defensive duels",
+                   "\nDefensive \nduels won %","\nPAdj \nSliding tackles","\nPAdj \nInterceptions"],
+            "AM": ["Touches in box","Shots","Goal conversion %","Non-penalty goals","xG",
+                   "\nAccurate passes \nto penalty area %","\nAccurate \ncrosses %","Shot assists",
+                   "xA","Assists","Offensive duels","\nOffensive \nduels won %","\nSuccessful \nattacking actions",
+                   "Dribbles","\nSuccessful \ndribbles %"],
+        }
+    
+        cols = pos_cols.get(position, [])
+        params = pos_params.get(position, [])
+        if not cols:
+            st.warning(f"No metric template configured for position: {position}")
+            st.stop()
+    
+        # Ensure numeric, compute min/max ranges from the position cohort
+        missing = [c for c in cols if c not in df.columns]
+        if missing:
+            st.error(f"Missing columns for {position}: {missing}")
+            st.stop()
+        for c in cols:
+            df[c] = pd.to_numeric(df[c], errors="coerce")
+    
+        low = df[cols].min().values.round(2).tolist()
+        high = df[cols].max().values.round(2).tolist()
+        player_vals = playerdata[cols].iloc[0].values.round(2).tolist()
+    
+        # Team name for title (fallbacks)
+        team_col = "Team" if "Team" in playerdata.columns else (
+            "Team within selected timeframe" if "Team within selected timeframe" in playerdata.columns else None
+        )
+        teamname = playerdata[team_col].iloc[0] if team_col else ""
+    
+        # --- 4) Build Raw Radar (single series, raw values scaled by min–max) ---
+        font_normal = FontManager('https://raw.githubusercontent.com/googlefonts/roboto/main/src/hinted/Roboto-Regular.ttf')
+        font_italic = FontManager('https://raw.githubusercontent.com/googlefonts/roboto/main/src/hinted/Roboto-Italic.ttf')
+        font_bold = FontManager('https://raw.githubusercontent.com/google/fonts/main/apache/robotoslab/RobotoSlab[wght].ttf')
+    
+        radar = Radar(
+            params=params,
+            min_range=low,
+            max_range=high,
+            round_int=[False] * len(params),
+            num_rings=4,
+            ring_width=1,
+            center_circle_radius=1,
+        )
+    
+        fig, ax = radar.setup_axis()
+        ax.set_facecolor('#F2F2F2')
+        radar.draw_circles(ax=ax, facecolor='#b3b3b3', edgecolor='#b3b3b3')
+        radar.spoke(ax=ax, color='#a6a4a1', linestyle='--', zorder=2)
+    
+        # Fill only the player's polygon (raw)
+        radar.draw_radar(
+            player_vals,
+            ax=ax,
+            kwargs_radar={'facecolor': '#A7192B', 'alpha': 0.9, 'edgecolor': '#000000', 'linewidth': 1.0},
+        )
+        radar.draw_range_labels(ax=ax, fontsize=10, fontproperties=font_italic.prop)
+        radar.draw_param_labels(ax=ax, fontsize=12.5, fontproperties=font_bold.prop, color='black')
+    
+        # Title/subtitle/credits
+        ax_limits = ax.get_xlim(), ax.get_ylim()
+        cx = (ax_limits[0][0] + ax_limits[0][1]) / 2
+        ax.text(
+            cx, 6.65, f"{playerrequest} - {teamname} | Raw Radar (min–max scaled within {position})",
+            size=17, fontproperties=font_bold.prop, color="#000000", ha="center",
+            bbox=dict(facecolor='#f2f2f2', alpha=0.5, edgecolor='#f2f2f2')
+        )
+        ax.text(
+            cx, 6.35, f"{league} | Season {season} | Threshold ≥ {minutethreshold} mins",
+            size=12, fontproperties=font_normal.prop, color="#000000", ha="center"
+        )
+    
+        # Logos (safe if missing)
+        try:
+            add_image(rdaimage, fig, left=0.775, bottom=0.725, width=0.15, height=0.15)
+        except Exception:
+            pass
+        try:
+            add_image(leagueimage, fig, left=0.135, bottom=0.115, width=0.125, height=0.125)
+        except Exception:
+            pass
+    
+        # Legend chip + credit
+        fig.text(0.17, 0.8525, f"{playerrequest}", size=10, fontproperties=font_bold.prop, color="#000000")
+        fig.patches.extend([
+            plt.Rectangle((0.15, 0.85), 0.015, 0.015, fill=True, color="#A7192B", transform=fig.transFigure, figure=fig),
+        ])
+        fig.text(0.67, 0.12, "Data from Wyscout | Raw metrics (no percentiles)", size=8,
+                 fontproperties=font_bold.prop, color="#000000")
     
         st.pyplot(fig)
 else:
