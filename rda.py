@@ -1006,11 +1006,11 @@ if uploaded_file:
         teamname = playerdata[team_col].iloc[0] if team_col else ""
     
         fig.text(
-            0.515, 0.975, f'{playerrequest} - {teamname} | Raw Metrics (min–max scaled within {position})',
+            0.515, 0.975, f'{playerrequest} - {teamname} | Compared with other {position})',
             size=16, ha="center", fontproperties=font_bold.prop, color="#000000"
         )
         fig.text(
-            0.515, 0.953, f'{league} | Season {season} | ≥ {minutethreshold} mins',
+            0.515, 0.953, f'{league} | Season {season} | Minimum {minutethreshold} mins',
             size=13, ha="center", fontproperties=font_bold.prop, color="#000000"
         )
     
