@@ -961,15 +961,21 @@ if uploaded_file:
             ring_width=1,
             center_circle_radius=1,
         )
-    
-        plt.close('all')                  # nuke any prior figures
+        
+        # Start from a clean canvas every run
+        import matplotlib.pyplot as plt
+        plt.close('all')
+        
+        # Create axes
         fig, ax = radar.setup_axis()
-        #...
-        st.pyplot(fig, clear_figure=True) # make Streamlit clear after drawing           ax.set_facecolor('#F2F2F2')
+        ax.set_facecolor('#F2F2F2')
+        
+        # Background rings and spokes
         radar.draw_circles(ax=ax, facecolor='#b3b3b3', edgecolor='#b3b3b3')
         radar.spoke(ax=ax, color='#a6a4a1', linestyle='--', zorder=2)
-    
-        # Fill only the player's polygon (raw)
+        
+        # ---- Single polygon (no compare), keep one consistent color
+        # NOTE: do NOT pass `zorder` here (Radar already sets it internally).
         radar.draw_radar(
             player_vals,
             ax=ax,
@@ -978,25 +984,25 @@ if uploaded_file:
                 'alpha': 0.9,
                 'edgecolor': '#000000',
                 'linewidth': 1.0,
-                'zorder': 5,            # ensure it sits above any leftovers
             },
         )
+        
+        # Labels
         radar.draw_range_labels(ax=ax, fontsize=10, fontproperties=font_italic.prop)
         radar.draw_param_labels(ax=ax, fontsize=12.5, fontproperties=font_bold.prop, color='black')
-    
-        # Title/subtitle/credits
-        ax_limits = ax.get_xlim(), ax.get_ylim()
-        cx = (ax_limits[0][0] + ax_limits[0][1]) / 2
+        
+        # Title / subtitle
+        cx = (ax.get_xlim()[0] + ax.get_xlim()[1]) / 2
         ax.text(
-            cx, 6.65, f"{playerrequest} - {teamname} | League Rankings)",
+            cx, 6.65, f"{playerrequest} - {teamname} | League Rankings",
             size=17, fontproperties=font_bold.prop, color="#000000", ha="center",
-            bbox=dict(facecolor='#f2f2f2', alpha=0.5, edgecolor='#f2f2f2')
+            bbox=dict(facecolor='#f2f2f2', alpha=0.5, edgecolor='#f2f2f2'),
         )
         ax.text(
             cx, 6.35, f"{league} | Season {season} | Minimum {minutethreshold} mins | Compared against other {position}",
-            size=12, fontproperties=font_normal.prop, color="#000000", ha="center"
+            size=12, fontproperties=font_normal.prop, color="#000000", ha="center",
         )
-    
+        
         # Logos (safe if missing)
         try:
             add_image(rdaimage, fig, left=0.775, bottom=0.725, width=0.15, height=0.15)
@@ -1006,15 +1012,19 @@ if uploaded_file:
             add_image(leagueimage, fig, left=0.135, bottom=0.115, width=0.125, height=0.125)
         except Exception:
             pass
-    
+        
         # Legend chip + credit
         fig.text(0.17, 0.8525, f"{playerrequest}", size=10, fontproperties=font_bold.prop, color="#000000")
         fig.patches.extend([
-            plt.Rectangle((0.15, 0.85), 0.015, 0.015, fill=True, color="#A7192B", transform=fig.transFigure, figure=fig),
+            plt.Rectangle((0.15, 0.85), 0.015, 0.015, fill=True, color="#A7192B",
+                          transform=fig.transFigure, figure=fig),
         ])
-        fig.text(0.67, 0.12, "Data from Wyscout | Raw metrics (no percentiles)", size=8,
-                 fontproperties=font_bold.prop, color="#000000")
-    
-        st.pyplot(fig)
+        fig.text(
+            0.67, 0.12, "Data from Wyscout | Raw metrics (no percentiles)",
+            size=8, fontproperties=font_bold.prop, color="#000000",
+        )
+        
+        # Render LAST (so Streamlit clears the figure after drawing)
+        st.pyplot(fig, clear_figure=True)
 else:
     st.warning("Please upload an Excel file.")
