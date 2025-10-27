@@ -727,6 +727,7 @@ if uploaded_file:
         )
     
         fig, ax = radar.setup_axis()
+        fig.patch.set_facecolor('#F2F2F2')   # <--- full figure background
         ax.set_facecolor('#F2F2F2')
         radar.draw_circles(ax=ax, facecolor='#b3b3b3', edgecolor='#b3b3b3')
     
