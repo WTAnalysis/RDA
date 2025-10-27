@@ -1006,12 +1006,12 @@ if uploaded_file:
         teamname = playerdata[team_col].iloc[0] if team_col else ""
     
         fig.text(
-            0.515, 0.975, f'{playerrequest} - {teamname} | Compared with other {position})',
+            0.515, 0.975, f'{playerrequest} - {teamname}',
             size=16, ha="center", fontproperties=font_bold.prop, color="#000000"
         )
         fig.text(
-            0.515, 0.953, f'{league} | Season {season} | Minimum {minutethreshold} mins',
-            size=13, ha="center", fontproperties=font_bold.prop, color="#000000"
+            0.515, 0.953, f'{league} | Season {season} | > {minutethreshold} mins | Compared with other {position}'),
+            size=12, ha="center", fontproperties=font_bold.prop, color="#000000"
         )
     
         CREDIT = "Data from Wyscout | Raw metrics (no percentiles)"
