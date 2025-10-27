@@ -1010,7 +1010,7 @@ if uploaded_file:
             size=16, ha="center", fontproperties=font_bold.prop, color="#000000"
         )
         fig.text(
-            0.515, 0.953, f'{league} | Season {season} | > {minutethreshold} mins | Compared with other {position}'),
+            0.515, 0.953, f'{league} | Season {season} | > {minutethreshold} mins | Compared with other {position}',
             size=12, ha="center", fontproperties=font_bold.prop, color="#000000"
         )
     
