@@ -951,7 +951,7 @@ if uploaded_file:
         font_normal = FontManager('https://raw.githubusercontent.com/googlefonts/roboto/main/src/hinted/Roboto-Regular.ttf')
         font_italic = FontManager('https://raw.githubusercontent.com/googlefonts/roboto/main/src/hinted/Roboto-Italic.ttf')
         font_bold = FontManager('https://raw.githubusercontent.com/google/fonts/main/apache/robotoslab/RobotoSlab[wght].ttf')
-    
+        
         radar = Radar(
             params=params,
             min_range=low,
@@ -962,8 +962,10 @@ if uploaded_file:
             center_circle_radius=1,
         )
     
+        plt.close('all')                  # nuke any prior figures
         fig, ax = radar.setup_axis()
-        ax.set_facecolor('#F2F2F2')
+        ...
+        st.pyplot(fig, clear_figure=True) # make Streamlit clear after drawing           ax.set_facecolor('#F2F2F2')
         radar.draw_circles(ax=ax, facecolor='#b3b3b3', edgecolor='#b3b3b3')
         radar.spoke(ax=ax, color='#a6a4a1', linestyle='--', zorder=2)
     
@@ -971,7 +973,13 @@ if uploaded_file:
         radar.draw_radar(
             player_vals,
             ax=ax,
-            kwargs_radar={'facecolor': '#A7192B', 'alpha': 0.9, 'edgecolor': '#000000', 'linewidth': 1.0},
+            kwargs_radar={
+                'facecolor': '#A7192B',
+                'alpha': 0.9,
+                'edgecolor': '#000000',
+                'linewidth': 1.0,
+                'zorder': 5,            # ensure it sits above any leftovers
+            },
         )
         radar.draw_range_labels(ax=ax, fontsize=10, fontproperties=font_italic.prop)
         radar.draw_param_labels(ax=ax, fontsize=12.5, fontproperties=font_bold.prop, color='black')
@@ -980,12 +988,12 @@ if uploaded_file:
         ax_limits = ax.get_xlim(), ax.get_ylim()
         cx = (ax_limits[0][0] + ax_limits[0][1]) / 2
         ax.text(
-            cx, 6.65, f"{playerrequest} - {teamname} | Raw Radar (min–max scaled within {position})",
+            cx, 6.65, f"{playerrequest} - {teamname} | League Rankings)",
             size=17, fontproperties=font_bold.prop, color="#000000", ha="center",
             bbox=dict(facecolor='#f2f2f2', alpha=0.5, edgecolor='#f2f2f2')
         )
         ax.text(
-            cx, 6.35, f"{league} | Season {season} | Threshold ≥ {minutethreshold} mins",
+            cx, 6.35, f"{league} | Season {season} | Minimum {minutethreshold} mins | Compared against other {position}",
             size=12, fontproperties=font_normal.prop, color="#000000", ha="center"
         )
     
