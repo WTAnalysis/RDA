@@ -1014,7 +1014,7 @@ if uploaded_file:
             size=12, ha="center", fontproperties=font_bold.prop, color="#000000"
         )
     
-        CREDIT = "Data from Wyscout | Raw metrics (no percentiles)"
+        CREDIT = "Data from Wyscout | Metrics are per 90 unless stated | Raw metrics"
         fig.text(0.99, 0.02, CREDIT, size=9, fontproperties=font_italic.prop, color="#000000", ha="right")
     
         fig.text(
