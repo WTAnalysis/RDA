@@ -964,7 +964,7 @@ if uploaded_file:
     
         plt.close('all')                  # nuke any prior figures
         fig, ax = radar.setup_axis()
-        ...
+        #...
         st.pyplot(fig, clear_figure=True) # make Streamlit clear after drawing           ax.set_facecolor('#F2F2F2')
         radar.draw_circles(ax=ax, facecolor='#b3b3b3', edgecolor='#b3b3b3')
         radar.spoke(ax=ax, color='#a6a4a1', linestyle='--', zorder=2)
